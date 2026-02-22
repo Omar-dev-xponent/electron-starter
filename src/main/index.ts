@@ -1,7 +1,71 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, shell, BrowserWindow, ipcMain, dialog, PrintToPDFOptions } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import * as fs from 'fs'
+import * as path from 'path'
+
+// ── Margins helper (mm → inches, Electron uses inches) ───────────────────────
+const mmToInches = (mm: number): number => mm / 25.4
+
+// ── Page config (keep in sync with PrintConfig in your React app) ────────────
+const PAGE_MARGIN_MM = 15
+
+// ── IPC: Print (opens system print dialog) ───────────────────────────────────
+ipcMain.handle('print', async (): Promise<void> => {
+  const win = BrowserWindow.getFocusedWindow()
+  if (!win) return
+
+  win.webContents.print(
+    {
+      silent: false, // false = show system print dialog
+      printBackground: true, // include background colors/images
+      color: true
+    },
+    (success: boolean, errorType?: string) => {
+      if (!success) console.error('[Print] Failed:', errorType)
+    }
+  )
+})
+
+// ── IPC: Save as PDF ─────────────────────────────────────────────────────────
+ipcMain.handle(
+  'save-pdf',
+  async (_event, fileName: string = 'report.pdf'): Promise<{ success: boolean; path?: string }> => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return { success: false }
+
+    const { filePath, canceled } = await dialog.showSaveDialog(win, {
+      title: 'Save PDF',
+      defaultPath: fileName,
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    })
+
+    if (canceled || !filePath) return { success: false }
+
+    const pdfOptions: PrintToPDFOptions = {
+      printBackground: true,
+      pageSize: 'A4',
+      landscape: false,
+      margins: {
+        marginType: 'custom',
+        top: mmToInches(PAGE_MARGIN_MM),
+        bottom: mmToInches(PAGE_MARGIN_MM),
+        left: mmToInches(PAGE_MARGIN_MM),
+        right: mmToInches(PAGE_MARGIN_MM)
+      }
+    }
+
+    try {
+      const pdfBuffer = await win.webContents.printToPDF(pdfOptions)
+      fs.writeFileSync(filePath, pdfBuffer)
+      console.log('[PDF] Saved to:', filePath)
+      return { success: true, path: filePath }
+    } catch (err) {
+      console.error('[PDF] Error:', err)
+      return { success: false }
+    }
+  }
+)
 
 function createWindow(): void {
   // Create the browser window.
@@ -12,7 +76,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false
     }
   })
@@ -31,7 +95,7 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
 }
 

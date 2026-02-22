@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -11,6 +11,14 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+
+    // Expose typed API to renderer (React) via window.electronAPI
+    contextBridge.exposeInMainWorld('electronAPI', {
+      print: (): Promise<void> => ipcRenderer.invoke('print'),
+
+      savePDF: (fileName?: string): Promise<{ success: boolean; path?: string }> =>
+        ipcRenderer.invoke('save-pdf', fileName)
+    })
   } catch (error) {
     console.error(error)
   }
