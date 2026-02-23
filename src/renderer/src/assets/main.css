@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 
-/* ── Animations (Tailwind has no custom cubic-bezier keyframes) ── */
+/* ============================================================
+   print.css — Only what Tailwind cannot do
+   Import in main.css: @import './print.css';
+   ============================================================ */
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
 @keyframes overlayFadeIn {
   from {
     opacity: 0;
@@ -24,14 +29,16 @@
 .animate-overlay-in {
   animation: overlayFadeIn 0.2s ease;
 }
-
 .animate-modal-in {
   animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── @media print — Tailwind's print: variant cannot do these ── */
+/* ══════════════════════════════════════════════════════════════
+   @media print
+   Everything below is impossible via Tailwind's print: variant
+   ══════════════════════════════════════════════════════════════ */
 @media print {
-  /* Hide entire app, show only the portal */
+  /* 1. Hide the entire app, reveal only the print portal */
   body > * {
     display: none !important;
   }
@@ -39,26 +46,97 @@
     display: block !important;
   }
 
-  /* Page break per card */
-  #print-root .print-page-card {
-    box-shadow: none !important;
-    border-radius: 0 !important;
+  /* 2. Reset portal wrapper */
+  #print-root {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  /* ── Page layout ──────────────────────────────────────────── */
+
+  /* Force each explicit page-break section onto its own page */
+  .print-page-break {
     page-break-after: always;
     break-after: page;
   }
-
-  /* No trailing break on last page */
-  #print-root .print-page-card:last-child {
+  .print-page-break:last-child {
     page-break-after: avoid;
     break-after: avoid;
   }
 
-  /* Hide preview-only badge during print */
-  #print-root .page-number-badge {
+  /* ── Table rules ──────────────────────────────────────────── */
+
+  /* Repeat <thead> on every new page automatically */
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Never break a table row across pages */
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Never orphan the last row of a tbody on its own page */
+  tbody {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* ── Section / block rules ────────────────────────────────── */
+
+  /* Section headings should never be the last thing on a page */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Keep a heading attached to at least the first line of content below it */
+  h1 + *,
+  h2 + *,
+  h3 + *,
+  h4 + * {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+
+  /* Never split these elements across pages */
+  .print-keep-together {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Force a new page before this element */
+  .print-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  /* ── Visual cleanup for print ─────────────────────────────── */
+  .print-page-break,
+  .print-keep-together {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide UI-only elements */
+  .print-hide {
+    display: none !important;
+  }
+  .page-number-badge {
     display: none !important;
   }
 
-  /* Default @page — overridden by dynamic <style> injected from modal props */
+  /* ── @page — overridden by dynamic <style> tag in PrintPreviewModal ── */
   @page {
     size: A4 portrait;
     margin: 15mm;
