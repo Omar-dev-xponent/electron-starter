@@ -4,7 +4,7 @@ import type { TableRow, PrintConfig } from '../types/print.types'
 
 // ─── Default config — tweak these values ─────────────────────────────────────
 const DEFAULT_CONFIG: PrintConfig = {
-  rowsPerPage: 10, // rows per printed page
+  rowsPerPage: 15, // rows per printed page
   pageMarginMm: 15, // page margin in mm (must match main.ts)
   pageSize: 'A4',
   landscape: false,
@@ -117,7 +117,7 @@ interface PrintTableProps {
 }
 
 const PrintTable: React.FC<PrintTableProps> = ({
-  data = generateData(100),
+  data = generateData(150),
   config: configOverrides = {}
 }) => {
   const config: PrintConfig = { ...DEFAULT_CONFIG, ...configOverrides }
