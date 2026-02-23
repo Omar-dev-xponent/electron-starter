@@ -1,1 +1,66 @@
 @import 'tailwindcss';
+
+/* ── Animations (Tailwind has no custom cubic-bezier keyframes) ── */
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-overlay-in {
+  animation: overlayFadeIn 0.2s ease;
+}
+
+.animate-modal-in {
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── @media print — Tailwind's print: variant cannot do these ── */
+@media print {
+  /* Hide entire app, show only the portal */
+  body > * {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+  }
+
+  /* Page break per card */
+  #print-root .print-page-card {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* No trailing break on last page */
+  #print-root .print-page-card:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Hide preview-only badge during print */
+  #print-root .page-number-badge {
+    display: none !important;
+  }
+
+  /* Default @page — overridden by dynamic <style> injected from modal props */
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+}
