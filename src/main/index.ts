@@ -13,7 +13,7 @@ const PAGE_MARGIN_MM = 15
 // ── IPC: Print (opens system print dialog) ───────────────────────────────────
 ipcMain.handle('print', async (): Promise<void> => {
   const win = BrowserWindow.getFocusedWindow()
-  if (!win) return
+  if (!win) return 
 
   win.webContents.print(
     {
